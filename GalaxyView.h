@@ -46,6 +46,7 @@ public slots:
     void CreateSystem();
     bool RenameSystem(const QString &from, const QString &to);
     void DeleteSystem();
+    void FindSystem();
     void Recenter();
     void RandomizeCommodity();
 

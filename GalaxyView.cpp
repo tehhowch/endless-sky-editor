@@ -233,6 +233,63 @@ void GalaxyView::DeleteSystem()
 
 
 
+// Search for a system, and if found, select it. Prefers an exact match, but
+// will match based on the position of the searched string. If multiple options
+// have the same rank, will allow the user to select the desired match.
+void GalaxyView::FindSystem()
+{
+    QString input = QInputDialog::getText(this, "Find System", "Enter all or part of the system's name:");
+    if(input.isEmpty())
+        return;
+
+    // Try for an exact match.
+    auto match = mapData.Systems().find(input);
+    if(match == mapData.Systems().end())
+    {
+        // Otherwise, collect any partial matches and let the user pick the desired one.
+        map<int, QVector<QString>> matches;
+        for(const auto &system : mapData.Systems())
+        {
+            int rank = system.first.indexOf(input, 0, Qt::CaseInsensitive);
+            if(rank >= 0)
+                matches[rank].push_back(system.first);
+        }
+        if(!matches.empty())
+        {
+            const QVector<QString> &choices = (*matches.begin()).second;
+            if(choices.size() == 1)
+                match = mapData.Systems().find(choices.front());
+            else
+            {
+                // Rather than show every possible match, show only those that share the best rank.
+                bool ok = false;
+                QString choice = QInputDialog::getItem(
+                        this, "Multiple Matches", "Pick the desired system:", choices.toList(), 0, false, &ok
+                );
+                if(ok && !choice.isEmpty())
+                    match = mapData.Systems().find(choice);
+                else
+                    return;
+            }
+        }
+    }
+
+    if(match != mapData.Systems().end())
+    {
+        // Select the matched system.
+        System &matched = (*match).second;
+        detailView->SetSystem(&matched);
+        systemView->Select(&matched);
+        // Center the viewport on it.
+        offset = -matched.Position() * scale;
+        update();
+    }
+    else
+        QMessageBox::warning(this, "No match found", "The text '" + input + "' did not match any systems.");
+}
+
+
+
 void GalaxyView::Recenter()
 {
     Center();

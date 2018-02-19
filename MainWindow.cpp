@@ -256,14 +256,19 @@ void MainWindow::CreateMenus()
         QAction *newAction = fileMenu->addAction("New...", this, SLOT(NewMap()));
         newAction->setShortcut(QKeySequence::New);
 
+        fileMenu->addSeparator();
+
         QAction *openAction = fileMenu->addAction("Open...", this, SLOT(Open()));
         openAction->setShortcut(QKeySequence::Open);
+
+        fileMenu->addSeparator();
 
         QAction *saveAction = fileMenu->addAction("Save...", this, SLOT(Save()));
         saveAction->setShortcut(QKeySequence::Save);
 
         QAction *saveAsAction = fileMenu->addAction("Save As...", this, SLOT(SaveAs()));
         saveAsAction->setShortcut(QKeySequence::SaveAs);
+
         fileMenu->addSeparator();
 
         QAction *quitAction = fileMenu->addAction("Quit", this, SLOT(Quit()));
@@ -273,6 +278,10 @@ void MainWindow::CreateMenus()
     // Galaxy Menu:
     galaxyMenu = menuBar()->addMenu("Galaxy");
     {
+        QAction *findSystemAction = galaxyMenu->addAction("Find System");
+        connect(findSystemAction, SIGNAL(triggered()), galaxyView, SLOT(FindSystem()));
+        findSystemAction->setShortcut(QKeySequence::Find);
+
         QAction *createSystemAction = galaxyMenu->addAction("Create System");
         connect(createSystemAction, SIGNAL(triggered()), galaxyView, SLOT(CreateSystem()));
 
@@ -281,8 +290,10 @@ void MainWindow::CreateMenus()
         deleteSystemAction->setShortcut(QKeySequence(Qt::Key_Backspace));
 
         galaxyMenu->addSeparator();
+
         QAction *centerAction = galaxyMenu->addAction("Recenter View");
         connect(centerAction, SIGNAL(triggered()), galaxyView, SLOT(Recenter()));
+
         galaxyMenu->addSeparator();
 
         QAction *randomizeCommodityAction = galaxyMenu->addAction("Randomize Commodity");
