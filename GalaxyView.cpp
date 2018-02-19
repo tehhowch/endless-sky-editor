@@ -23,6 +23,7 @@ PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 #include <QPalette>
 #include <QMouseEvent>
 #include <QTabWidget>
+#include <QToolTip>
 #include <QVector2D>
 
 #include <algorithm>
@@ -71,6 +72,7 @@ GalaxyView::GalaxyView(Map &mapData, QTabWidget *tabs, QWidget *parent) :
     setToolTip("Left click to select a system. Drag to move a system or pan the view.\n"
         "Right click to create a new system or to toggle links between systems.\n"
         "Use the scroll wheel to zoom in and out.");
+    setMouseTracking(true);
 
     Center();
 }
@@ -501,6 +503,13 @@ void GalaxyView::mouseDoubleClickEvent(QMouseEvent *event)
 // Drag either the selected system, or the background.
 void GalaxyView::mouseMoveEvent(QMouseEvent *event)
 {
+    // Dynamic tooltip code
+    if(!event->buttons())
+    {
+
+    }
+
+    // Drag code
     if(!(event->buttons() & Qt::LeftButton))
         return;
 
@@ -534,6 +543,28 @@ void GalaxyView::wheelEvent(QWheelEvent *event)
     // We want: point = origin * scale + offset + center.
     offset = point - origin * scale - center;
     update();
+}
+
+
+
+bool GalaxyView::event(QEvent *event)
+{
+    if(event->type() == QEvent::ToolTip)
+    {
+        QHelpEvent *helpEvent = static_cast<QHelpEvent *>(event);
+        // Display the mouse position and the values of center, offset, and clickOff
+        QVector2D center(.5 * width(), .5 * height());
+        QString message = "Center:\t\t" + QString::number(center.x()) + ", " + QString::number(center.y());
+        message += '\n';
+        message += "offset:\t\t" + QString::number(offset.x()) + ", " + QString::number(offset.y());
+        message += '\n';
+        message += "clickOff:\t\t" + QString::number(clickOff.x()) + ", " + QString::number(clickOff.y());
+        message += '\n';
+        message += "global:\t\t" + QString::number(helpEvent->globalPos().x()) + ", " + QString::number(helpEvent->globalPos().y());
+        QToolTip::showText(helpEvent->globalPos(), message);
+        return true;
+    }
+    return QWidget::event(event);
 }
 
 
