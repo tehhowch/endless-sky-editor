@@ -61,7 +61,7 @@ public:
     // Get the list of outfits available from the outfitter.
     const std::vector<QString> &Outfitter() const;
 
-    // You need this good a reputation with this system's government to land here.
+    // You need this good a reputation with the planetary government to land here.
     double RequiredReputation() const;
     // This is what fraction of your fleet's value you must pay as a bribe in
     // order to land on this planet. (If zero, you cannot bribe it.)
@@ -69,13 +69,22 @@ public:
     // This is how likely the planet's authorities are to notice if you are
     // doing something illegal.
     double Security() const;
-    // Stipend for conquering the planet
+
+    void AddSystem(const System *system);
+
+    // Methods used to provide wormhole support.
+    bool IsInSystem(const System *system) const;
+    bool IsWormhole() const;
+    // The ordered wormhole travel path.
+    const std::vector<const System *> &WormholeSystems() const;
+
+    // Daily stipend for conquering the planet.
     double Tribute() const;
-    // Combat Rating level before you are an actual threat. Balance this with tribute and fleet.
+    // Minimum Combat Rating needed to enable the tribute response.
     double TributeThreshold() const;
-    // Number of Defending Ships
+    // The number of the specified defense fleet that must be defeated to earn the tribute amount.
     double TributeFleetQuantity() const;
-    // Get the fleet assigned to protect planet
+    // The stock fleet spawned during a tribute response.
     const QString &TributeFleetName() const;
 
     // Editing a planet:
@@ -107,6 +116,10 @@ private:
     std::vector<QString> attributes;
     std::vector<QString> shipyard;
     std::vector<QString> outfitter;
+
+    // A planet may appear in more than one system. Their order indicates the
+    // direction of wormhole travel (from front to back).
+    std::vector<const System *> systems;
 
     double requiredReputation = std::numeric_limits<double>::quiet_NaN();
     double bribe = std::numeric_limits<double>::quiet_NaN();

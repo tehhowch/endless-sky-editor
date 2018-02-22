@@ -19,10 +19,12 @@ PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 
 #include <QInputDialog>
 #include <QMessageBox>
+#include <QMouseEvent>
 #include <QPainter>
 #include <QPalette>
-#include <QMouseEvent>
+#include <QPolygonF>
 #include <QTabWidget>
+#include <QTransform>
 
 #include <algorithm>
 #include <cmath>
@@ -559,8 +561,52 @@ void GalaxyView::paintEvent(QPaintEvent */*event*/)
         painter.drawPixmap(pos, sprite);
     }
 
-    // Draw the links between systems.
     painter.setBrush(Qt::NoBrush);
+
+    // Draw wormhole links between systems, including the direction of the link,
+    // for any wormholes whose planet has a description.
+    {
+        set<pair<const System *, const System *>> arrowsToDraw;
+        // A system may host more than one wormhole (e.g. Cardea), and some
+        // wormholes may share a link vector.
+        for(const auto &it : mapData.Planets())
+        {
+            if(!it.second.IsWormhole() || it.second.Description().isEmpty())
+                continue;
+
+            const vector<const System *> &waypoints = it.second.WormholeSystems();
+            // A planet's systems are set when reading the map file, so any
+            // waypoints are guaranteed to be in this map file.
+            const System *from = waypoints.back();
+            for(const System *to : waypoints)
+            {
+                arrowsToDraw.emplace(from, to);
+                from = to;
+            }
+        }
+
+        painter.setPen(QColor("magenta"));
+        // If an arrow is being drawn, the link should be drawn too, if it is
+        // the first instance of it in this set.
+        for(const pair<const System *, const System *> &link : arrowsToDraw)
+            if(link.first < link.second || !arrowsToDraw.count(make_pair(link.second, link.first)))
+                painter.drawLine(link.first->Position().toPointF(), link.second->Position().toPointF());
+
+        // Draw the arrowheads with a filled brush.
+        painter.setBrush(QBrush("magenta"));
+        for(const auto &link : arrowsToDraw)
+        {
+            // Compute the per-arrow coordinate transformation.
+            static const QPolygonF arrow({QPointF(0, -20), QPointF(5, -10), QPointF(-5, -10)});
+            qreal angle = 90. - QLineF(QPointF(), (link.second->Position() - link.first->Position()).toPointF()).angle();
+            QTransform matrix = QTransform().translate(link.first->Position().x(), link.first->Position().y()).rotate(angle);
+            QPolygonF arrowhead = matrix.map(arrow);
+            painter.drawConvexPolygon(arrowhead);
+        }
+        painter.setBrush(Qt::NoBrush);
+    }
+
+    // Draw the links between systems.
     for(const auto &it : mapData.Systems())
     {
         QPointF pos = it.second.Position().toPointF();

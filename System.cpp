@@ -40,7 +40,7 @@ namespace {
 
 
 // Load a system's description.
-void System::Load(const DataNode &node)
+void System::Load(const DataNode &node, map<QString, Planet> &planets)
 {
     if(node.Size() < 2)
         return;
@@ -74,7 +74,7 @@ void System::Load(const DataNode &node)
         else if(child.Token(0) == "minables" && child.Size() >= 3)
             minables.emplace_back(child.Token(1), static_cast<int>(child.Value(2)), child.Value(3));
         else if(child.Token(0) == "object")
-            LoadObject(child);
+            LoadObject(child, planets);
         else
             unparsed.push_back(child);
     }
@@ -288,7 +288,7 @@ void System::SetDay(double day)
 
 
 
-void System::LoadObject(const DataNode &node, int parent)
+void System::LoadObject(const DataNode &node, map<QString, Planet> &planets, int parent)
 {
     int index = static_cast<int>(objects.size());
 
@@ -296,7 +296,11 @@ void System::LoadObject(const DataNode &node, int parent)
     StellarObject &object = objects.back();
 
     if(node.Size() >= 2)
+    {
+        Planet *planet = &planets[node.Token(1)];
         object.planet = node.Token(1);
+        planet->AddSystem(this);
+    }
 
     for(const DataNode &child : node)
     {
@@ -309,7 +313,7 @@ void System::LoadObject(const DataNode &node, int parent)
         else if(child.Token(0) == "offset" && child.Size() >= 2)
             object.offset = child.Value(1);
         else if(child.Token(0) == "object")
-            LoadObject(child, index);
+            LoadObject(child, planets, index);
         else
             object.unparsed.push_back(child);
     }

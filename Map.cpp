@@ -41,7 +41,7 @@ void Map::Load(const QString &path)
         if(node.Token(0) == "planet" && node.Size() >= 2)
             planets[node.Token(1)].Load(node);
         else if(node.Token(0) == "system" && node.Size() >= 2)
-            systems[node.Token(1)].Load(node);
+            systems[node.Token(1)].Load(node, planets);
         else if(node.Token(0) == "galaxy")
             galaxies.emplace_back(node);
         else

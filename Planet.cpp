@@ -75,7 +75,7 @@ void Planet::Load(const DataNode &node)
 
 
 
-void  Planet::LoadTribute(const DataNode &node)
+void Planet::LoadTribute(const DataNode &node)
 {
     if(node.Size() >= 2)
         tribute = node.Value(1);
@@ -267,6 +267,36 @@ double Planet::Security() const
 
 
 
+// Add the desired system to the list of systems that contain this planet.
+void Planet::AddSystem(const System *system)
+{
+    if(system && !IsInSystem(system))
+        systems.push_back(system);
+}
+
+
+
+bool Planet::IsInSystem(const System *system) const
+{
+    return (find(systems.begin(), systems.end(), system) != systems.end());
+}
+
+
+
+bool Planet::IsWormhole() const
+{
+    return (systems.size() > 1);
+}
+
+
+
+const vector<const System *> &Planet::WormholeSystems() const
+{
+    return systems;
+}
+
+
+
 double Planet::Tribute() const
 {
     return tribute;
@@ -293,6 +323,8 @@ const QString &Planet::TributeFleetName() const
 {
     return tributeFleetName;
 }
+
+
 
 void Planet::SetName(const QString &name)
 {

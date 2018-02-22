@@ -50,7 +50,7 @@ public:
 
 public:
     // Load a system's description.
-    void Load(const DataNode &node);
+    void Load(const DataNode &node, std::map<QString, Planet> &planets);
     void Save(DataWriter &file) const;
 
     // Get this system's name and position (in the star map).
@@ -113,7 +113,7 @@ public:
 
 
 private:
-    void LoadObject(const DataNode &node, int parent = -1);
+    void LoadObject(const DataNode &node, std::map<QString, Planet> &planets, int parent = -1);
     void SaveObject(DataWriter &file, const StellarObject &object) const;
     void Recompute(StellarObject &object, bool updateOffset = true);
     // Get a list of all sprites that are in use already.
