@@ -239,6 +239,15 @@ void Map::RenamePlanet(StellarObject *object, const QString &name)
     auto it = planets.find(object->GetPlanet());
     if(it != planets.end())
     {
+        // Update the names used by other StellarObjects in its other systems.
+        for(const System *system : it->second.WormholeSystems())
+            for(const StellarObject &other : system->Objects())
+                if(other.GetPlanet() == object->GetPlanet() && &other != object)
+                {
+                    const_cast<StellarObject &>(other).SetPlanet(name);
+                    break;
+                }
+
         // Copy the existing definition to the new name.
         planets[name] = it->second;
         // Erase the previous definition.
