@@ -71,6 +71,7 @@ public:
     double Security() const;
 
     void AddSystem(const System *system);
+    void RemoveSystem(const System *system);
 
     // Methods used to provide wormhole support.
     bool IsInSystem(const System *system) const;

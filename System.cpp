@@ -867,7 +867,8 @@ void System::Randomize(bool allowHabitable, bool requireHabitable)
 
 
 
-void System::Delete(StellarObject *object)
+// Delete the given StellarObject from this system.
+void System::Delete(StellarObject *object, map<QString, Planet> &planets)
 {
     if(!object || objects.empty())
         return;
@@ -876,8 +877,25 @@ void System::Delete(StellarObject *object)
     if(index < 0 || static_cast<unsigned>(index) >= objects.size())
         return;
 
+    // If this object is the last reference to the given planet, that planet is no
+    // longer in this system.
+    if(!object->GetPlanet().isEmpty())
+    {
+        bool remove = true;
+        for(const auto &other : objects)
+            if(&other != object && other.GetPlanet() == object->GetPlanet())
+            {
+                remove = false;
+                break;
+            }
+        if(remove)
+            planets[object->GetPlanet()].RemoveSystem(this);
+    }
+
     double shrink = object->Radius();
 
+    // If there are other objects with the same parent that are further out
+    // than this object was, move them inward.
     auto it = objects.begin() + index;
     auto end = it + 1;
     while(end != objects.end() && end->Parent() == index)
@@ -892,6 +910,7 @@ void System::Delete(StellarObject *object)
     if(it == objects.end())
         return;
 
+    // If objects to be moved exist, move them and update their parent index.
     Move(&*it, -2. * shrink);
     for( ; it != objects.end(); ++it)
         if(it->parent >= 0)

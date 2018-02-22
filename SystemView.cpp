@@ -245,7 +245,7 @@ void SystemView::DeleteObject()
 {
     if(selectedObject)
     {
-        system->Delete(selectedObject);
+        system->Delete(selectedObject, mapData.Planets());
         selectedObject = nullptr;
         DidChange();
     }

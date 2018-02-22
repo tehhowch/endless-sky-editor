@@ -109,7 +109,7 @@ public:
     void AddPlanet();
     void AddMoon(StellarObject *object, bool isStation = false);
     void Randomize(bool allowHabitable, bool requireHabitable);
-    void Delete(StellarObject *object);
+    void Delete(StellarObject *object, std::map<QString, Planet> &planets);
 
 
 private:

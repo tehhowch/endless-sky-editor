@@ -276,6 +276,16 @@ void Planet::AddSystem(const System *system)
 
 
 
+// Remove the first instance of a given system from a wormhole's route.
+void Planet::RemoveSystem(const System *system)
+{
+    auto it = find(systems.begin(), systems.end(), system);
+    if(it != systems.end())
+        systems.erase(it);
+}
+
+
+
 bool Planet::IsInSystem(const System *system) const
 {
     return (find(systems.begin(), systems.end(), system) != systems.end());
