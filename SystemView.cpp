@@ -287,7 +287,7 @@ void SystemView::mousePressEvent(QMouseEvent *event)
             dragTime.start();
             selectedObject = dragObject = &object;
             clickOff = object.Position() - pos;
-            planetView->SetPlanet(&object);
+            planetView->SetPlanet(&object, system);
             update();
             return;
         }
@@ -309,7 +309,7 @@ void SystemView::mouseDoubleClickEvent(QMouseEvent *event)
     for(StellarObject &object : system->Objects())
         if(!object.IsStar() && pos.distanceToPoint(object.Position()) < object.Radius())
         {
-            planetView->SetPlanet(&object);
+            planetView->SetPlanet(&object, system);
             tabs->setCurrentWidget(planetView);
             return;
         }

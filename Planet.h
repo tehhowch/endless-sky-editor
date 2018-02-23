@@ -61,6 +61,8 @@ public:
     // Get the list of outfits available from the outfitter.
     const std::vector<QString> &Outfitter() const;
 
+    // Get this planet's government.
+    const QString &GetGovernment() const;
     // You need this good a reputation with the planetary government to land here.
     double RequiredReputation() const;
     // This is what fraction of your fleet's value you must pay as a bribe in
@@ -70,6 +72,8 @@ public:
     // doing something illegal.
     double Security() const;
 
+    // The primary system associated with this planet.
+    const System *GetSystem() const;
     void AddSystem(const System *system);
     void RemoveSystem(const System *system);
 
@@ -93,6 +97,7 @@ public:
     void SetLandscape(const QString &sprite);
     void SetDescription(const QString &text);
     void SetSpaceportDescription(const QString &text);
+    void SetGovernment(const QString &government);
     std::vector<QString> &Attributes();
     std::vector<QString> &Shipyard();
     std::vector<QString> &Outfitter();

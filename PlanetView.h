@@ -21,6 +21,7 @@ class QPlainTextEdit;
 class LandscapeView;
 class Map;
 class StellarObject;
+class System;
 
 
 
@@ -30,13 +31,14 @@ class PlanetView : public QWidget
 public:
     explicit PlanetView(Map &mapData, QWidget *parent = 0);
 
-    void SetPlanet(StellarObject *object);
+    void SetPlanet(StellarObject *object, const System *system = nullptr);
     void Reinitialize();
 
 signals:
 
 public slots:
     void NameChanged();
+    void GovernmentChanged();
     void AttributesChanged();
     void DescriptionChanged();
     void SpaceportDescriptionChanged();
@@ -61,6 +63,7 @@ private:
     StellarObject *object = nullptr;
 
     QLineEdit *name;
+    QLineEdit *government;
     QLineEdit *attributes;
     LandscapeView *landscape;
     QPlainTextEdit *description;

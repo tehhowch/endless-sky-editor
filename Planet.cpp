@@ -241,6 +241,13 @@ const vector<QString> &Planet::Outfitter() const
 
 
 
+const QString &Planet::GetGovernment() const
+{
+    return government;
+}
+
+
+
 // You need this good a reputation with this system's government to land here.
 double Planet::RequiredReputation() const
 {
@@ -263,6 +270,14 @@ double Planet::Bribe() const
 double Planet::Security() const
 {
     return security;
+}
+
+
+
+// Get this planet's primary system, i.e. the first one in which it was defined.
+const System *Planet::GetSystem() const
+{
+    return systems.empty() ? nullptr : systems.front();
 }
 
 
@@ -360,6 +375,13 @@ void Planet::SetDescription(const QString &text)
 void Planet::SetSpaceportDescription(const QString &text)
 {
     spaceport = text;
+}
+
+
+
+void Planet::SetGovernment(const QString &government)
+{
+    this->government = government;
 }
 
 

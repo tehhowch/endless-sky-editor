@@ -161,6 +161,9 @@ void MainWindow::TabChanged(int)
 
 
 
+// "Common" key sequences which are not associated with the menu sequence for
+// the action (such as pressing the "Delete" key to delete the selection) can be
+// passed to the relevant View for handling.
 void MainWindow::keyPressEvent(QKeyEvent *event)
 {
     if(tabs)

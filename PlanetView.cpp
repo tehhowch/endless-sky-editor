@@ -44,6 +44,8 @@ PlanetView::PlanetView(Map &mapData, QWidget *parent) :
 {
     name = new QLineEdit(this);
     connect(name, SIGNAL(editingFinished()), this, SLOT(NameChanged()));
+    government = new QLineEdit(this);
+    connect(government, SIGNAL(editingFinished()), this, SLOT(GovernmentChanged()));
     attributes = new QLineEdit(this);
     connect(attributes, SIGNAL(editingFinished()), this, SLOT(AttributesChanged()));
 
@@ -95,47 +97,64 @@ PlanetView::PlanetView(Map &mapData, QWidget *parent) :
     QGridLayout *layout = new QGridLayout(this);
     int row = 0;
 
-    layout->addWidget(new QLabel("Planet:", this), row, 0);
-    layout->addWidget(name, row++, 1);
+    // Align the name and government in the same line.
+    QWidget *nameBox = new QWidget(this);
+    {
+        QHBoxLayout *hLayout = new QHBoxLayout(nameBox);
+        hLayout->setContentsMargins(0, 0, 0, 0);
+        hLayout->addWidget(new QLabel("Planet:", this));
+        hLayout->addWidget(name);
+        hLayout->addWidget(new QLabel("Government:", this));
+        hLayout->addWidget(government);
+        hLayout->addStretch();
+    }
+    layout->addWidget(nameBox, row++, 0, 1, 2);
     layout->addWidget(new QLabel("Attributes:", this), row, 0);
     layout->addWidget(attributes, row++, 1);
 
     layout->addWidget(landscape, row++, 0, 1, 2);
 
     layout->addWidget(description, row++, 0, 1, 2);
+
     layout->addWidget(new QLabel("Spaceport description:", this), row++, 0, 1, 2);
     layout->addWidget(spaceport, row++, 0, 1, 2);
 
     layout->addWidget(new QLabel("Shipyard:", this), row, 0);
     layout->addWidget(shipyard, row++, 1);
+
     layout->addWidget(new QLabel("Outfitter:", this), row, 0);
     layout->addWidget(outfitter, row++, 1);
 
+    // Align landing / security controls in the same line.
     QWidget *box = new QWidget(this);
-    QHBoxLayout *hLayout = new QHBoxLayout(box);
-    hLayout->setContentsMargins(0, 0, 0, 0);
-    hLayout->addWidget(new QLabel("Required reputation:", this));
-    hLayout->addWidget(reputation);
-    hLayout->addWidget(new QLabel("Bribe:", this));
-    hLayout->addWidget(bribe);
-    hLayout->addWidget(new QLabel("Security:", this));
-    hLayout->addWidget(security);
-    hLayout->addStretch();
-        layout->addWidget(box, row++, 0, 1, 2);
+    {
+        QHBoxLayout *hLayout = new QHBoxLayout(box);
+        hLayout->setContentsMargins(0, 0, 0, 0);
+        hLayout->addWidget(new QLabel("Required reputation:", this));
+        hLayout->addWidget(reputation);
+        hLayout->addWidget(new QLabel("Bribe:", this));
+        hLayout->addWidget(bribe);
+        hLayout->addWidget(new QLabel("Security:", this));
+        hLayout->addWidget(security);
+        hLayout->addStretch();
+    }
+    layout->addWidget(box, row++, 0, 1, 2);
 
+    // Align tribute controls in the same line.
     QWidget *tributeBox = new QWidget(this);
-    QHBoxLayout *tributeHLayout = new QHBoxLayout(tributeBox);
-    tributeHLayout->setContentsMargins(0, 0, 0, 0);
-    tributeHLayout->addWidget(new QLabel("Tribute:", this));
-    tributeHLayout->addWidget(tribute);
-    tributeHLayout->addWidget(new QLabel("Threshold:", this));
-    tributeHLayout->addWidget(tributeThreshold);
-    tributeHLayout->addWidget(new QLabel("Fleet:", this));
-    tributeHLayout->addWidget(tributeFleetName);
-    tributeHLayout->addWidget(new QLabel("Quantity:", this));
-    tributeHLayout->addWidget(tributeFleetQuantity);
-    tributeHLayout->addStretch();
-
+    {
+        QHBoxLayout *tributeHLayout = new QHBoxLayout(tributeBox);
+        tributeHLayout->setContentsMargins(0, 0, 0, 0);
+        tributeHLayout->addWidget(new QLabel("Tribute:", this));
+        tributeHLayout->addWidget(tribute);
+        tributeHLayout->addWidget(new QLabel("Threshold:", this));
+        tributeHLayout->addWidget(tributeThreshold);
+        tributeHLayout->addWidget(new QLabel("Fleet:", this));
+        tributeHLayout->addWidget(tributeFleetName);
+        tributeHLayout->addWidget(new QLabel("Quantity:", this));
+        tributeHLayout->addWidget(tributeFleetQuantity);
+        tributeHLayout->addStretch();
+    }
     layout->addWidget(tributeBox, row++, 0, 1, 2);
 
     setLayout(layout);
@@ -143,7 +162,8 @@ PlanetView::PlanetView(Map &mapData, QWidget *parent) :
 
 
 
-void PlanetView::SetPlanet(StellarObject *object)
+// Initialize a blank view, or load the existing planet definition for editing.
+void PlanetView::SetPlanet(StellarObject *object, const System *system)
 {
     this->object = object;
 
@@ -153,25 +173,24 @@ void PlanetView::SetPlanet(StellarObject *object)
 
     if(it == mapData.Planets().end())
     {
-        name->clear();
-        attributes->clear();
+        // Remove the text from all items in the view.
+        for(QLineEdit *textbox : this->findChildren<QLineEdit *>())
+            textbox->clear();
+        for(QPlainTextEdit *textbox : this->findChildren<QPlainTextEdit *>())
+            textbox->clear();
+
+        // Set sane initial values.
         landscape->SetPlanet(nullptr);
-        description->clear();
-        spaceport->clear();
-        shipyard->clear();
-        outfitter->clear();
-        reputation->clear();
-        bribe->clear();
-        security->clear();
-        tribute->clear();
-        tributeThreshold->clear();
-        tributeFleetName->clear();
-        tributeFleetQuantity->clear();
+        government->setPlaceholderText(system ? system->Government() : QString());
     }
     else
     {
         Planet &planet = it->second;
         name->setText(planet.Name());
+        if(planet.GetGovernment().isEmpty())
+            government->setPlaceholderText(system ? system->Government() : QString());
+        else
+            government->setText(planet.GetGovernment());
         attributes->setText(ToString(planet.Attributes()));
         landscape->SetPlanet(&planet);
 
@@ -185,12 +204,14 @@ void PlanetView::SetPlanet(StellarObject *object)
 
         shipyard->setText(ToString(planet.Shipyard()));
         outfitter->setText(ToString(planet.Outfitter()));
+
         reputation->setText(std::isnan(planet.RequiredReputation()) ?
             QString() : QString::number(planet.RequiredReputation()));
         bribe->setText(std::isnan(planet.Bribe()) ?
             QString() : QString::number(planet.Bribe()));
         security->setText(std::isnan(planet.Security()) ?
             QString() : QString::number(planet.Security()));
+
         tribute->setText(std::isnan(planet.Tribute()) ?
             QString() : QString::number(planet.Tribute()));
         tributeThreshold->setText(std::isnan(planet.TributeThreshold()) ?
@@ -244,6 +265,29 @@ void PlanetView::NameChanged()
 
         mapData.SetChanged();
     }
+}
+
+
+
+// Change this planet's government. The default government is that of the system.
+void PlanetView::GovernmentChanged()
+{
+    if(!object || object->GetPlanet().isEmpty())
+        return;
+
+    Planet &planet = mapData.Planets()[object->GetPlanet()];
+    if(planet.GetGovernment() == government->text())
+        return;
+
+    // Update the planet's government with the new value.
+    planet.SetGovernment(government->text());
+
+    // If the text was deleted from the widget, display the system government
+    if(government->text().isEmpty())
+        government->setPlaceholderText(planet.GetSystem() ?
+                planet.GetSystem()->Government() : QString());
+
+    mapData.SetChanged();
 }
 
 
