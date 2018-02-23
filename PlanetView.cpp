@@ -55,10 +55,12 @@ PlanetView::PlanetView(Map &mapData, QWidget *parent) :
 
     description = new QPlainTextEdit(this);
     description->setTabStopWidth(20);
+    description->setPlaceholderText("Add a description. Descriptions are the default visible text while landed.");
     connect(description, SIGNAL(textChanged()), this, SLOT(DescriptionChanged()));
 
     spaceport = new QPlainTextEdit(this);
     spaceport->setTabStopWidth(20);
+    spaceport->setPlaceholderText("Optional text to be shown if the player clicks the \"Spaceport\" button.");
     connect(spaceport, SIGNAL(textChanged()), this, SLOT(SpaceportDescriptionChanged()));
 
     shipyard = new QLineEdit(this);
@@ -67,29 +69,42 @@ PlanetView::PlanetView(Map &mapData, QWidget *parent) :
     connect(outfitter, SIGNAL(editingFinished()), this, SLOT(OutfitterChanged()));
 
     reputation = new QLineEdit(this);
+    reputation->setPlaceholderText("0");
+    reputation->setMaximumWidth(100);
     reputation->setValidator(new QRegExpValidator(QRegExp("-?\\d*\\.?\\d*"), reputation));
     connect(reputation, SIGNAL(editingFinished()), this, SLOT(ReputationChanged()));
 
     bribe = new QLineEdit(this);
+    bribe->setPlaceholderText("0.01");
+    bribe->setMaximumWidth(100);
     bribe->setValidator(new QRegExpValidator(QRegExp("0||0?\\.\\d*"), bribe));
     connect(bribe, SIGNAL(editingFinished()), this, SLOT(BribeChanged()));
 
     security = new QLineEdit(this);
+    security->setPlaceholderText("0.25");
+    security->setMaximumWidth(100);
     security->setValidator(new QRegExpValidator(QRegExp("0||0?\\.\\d*"), security));
     connect(security, SIGNAL(editingFinished()), this, SLOT(SecurityChanged()));
 
     tribute = new QLineEdit(this);
+    tribute->setPlaceholderText("0");
+    tribute->setMaximumWidth(100);
     tribute->setValidator(new QRegExpValidator(QRegExp("\\d*"), tribute));
     connect(tribute, SIGNAL(editingFinished()), this, SLOT(TributeChanged()));
 
     tributeThreshold = new QLineEdit(this);
+    tributeThreshold->setPlaceholderText("4000");
+    tributeThreshold->setMaximumWidth(100);
     tributeThreshold->setValidator(new QRegExpValidator(QRegExp("\\d*"), tributeThreshold));
     connect(tributeThreshold, SIGNAL(editingFinished()), this, SLOT(TributeThresholdChanged()));
 
     tributeFleetName = new QLineEdit(this);
+    tributeFleetName->setMinimumWidth(200);
     connect(tributeFleetName, SIGNAL(editingFinished()), this, SLOT(TributeFleetNameChanged()));
 
     tributeFleetQuantity = new QLineEdit(this);
+    tributeFleetQuantity->setPlaceholderText("0");
+    tributeFleetQuantity->setMaximumWidth(100);
     tributeFleetQuantity->setValidator(new QRegExpValidator(QRegExp("\\d*"), tributeFleetQuantity));
     connect(tributeFleetQuantity, SIGNAL(editingFinished()), this, SLOT(TributeFleetQuantityChanged()));
 
@@ -245,23 +260,13 @@ void PlanetView::NameChanged()
     }
     else
     {
-        // Copy the planet data from the old name to the new name..
+        // Copy the existing data from the old name to the new name.
+        // (This also updates `object->GetPlanet()`.)
         mapData.RenamePlanet(object, name->text());
 
-        // Update (or create, if not previously a planet) the new name's data.
+        // Update objects that have pointers to this planet.
         Planet &planet = mapData.Planets()[name->text()];
-        planet.Attributes() = ToList(attributes->text());
-        planet.SetLandscape(landscape->Landscape());
         landscape->SetPlanet(&planet);
-        planet.SetDescription(description->toPlainText());
-        planet.SetSpaceportDescription(spaceport->toPlainText());
-
-        if(!reputation->text().isEmpty())
-            planet.SetRequiredReputation(reputation->text().toDouble());
-        if(!bribe->text().isEmpty())
-            planet.SetBribe(bribe->text().toDouble());
-        if(!security->text().isEmpty())
-            planet.SetSecurity(security->text().toDouble());
 
         mapData.SetChanged();
     }
