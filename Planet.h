@@ -109,6 +109,13 @@ public:
     void SetTributeFleetName(QString &value);
     void SetTributeFleetQuantity(double value);
 
+
+private:
+    // When a planet is added to a system in this map file, those systems should
+    // remain ordered to ensure wormhole links are properly rendered.
+    void SortWormholeSystems();
+
+
 private:
     QString name;
     QString landscape;

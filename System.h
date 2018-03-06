@@ -65,6 +65,7 @@ public:
     // Get the stellar object locations on the most recently set date.
     std::vector<StellarObject> &Objects();
     const std::vector<StellarObject> &Objects() const;
+    int PlanetCount(const QString &planet) const;
     // Get the habitable zone's center.
     double HabitableZone() const;
     // Get the radius of the zone occupied by the given stellar object. This

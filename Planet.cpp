@@ -14,6 +14,7 @@ PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 
 #include "DataNode.h"
 #include "DataWriter.h"
+#include "System.h"
 
 #include <algorithm>
 #include <cmath>
@@ -283,10 +284,16 @@ const System *Planet::GetSystem() const
 
 
 // Add the desired system to the list of systems that contain this planet.
+// If this planet is a wormhole, sort the systems to ensure the wormhole links
+// are drawn in the correct order.
 void Planet::AddSystem(const System *system)
 {
     if(system && !IsInSystem(system))
+    {
         systems.push_back(system);
+        if(IsWormhole())
+            SortWormholeSystems();
+    }
 }
 
 
@@ -452,4 +459,22 @@ void Planet::SetTributeFleetName(QString &value)
 void Planet::SetTributeFleetQuantity(double value)
 {
     tributeFleetQuantity = value;
+}
+
+
+
+// Sort the systems according to their name. Only systems which are present in
+// this map file are loaded, so when the map is saved they will be serialized
+// alphabetically. Consequently, the game will load them alphabetically and set
+// the wormhole route in that order.
+void Planet::SortWormholeSystems()
+{
+    if(!IsWormhole())
+        return;
+
+    sort(systems.begin(), systems.end(),
+        [] (const System *a, const System *b)
+        {
+             return a->Name() < b->Name();
+        });
 }

@@ -166,6 +166,17 @@ const vector<StellarObject> &System::Objects() const
 
 
 
+// Count the number of times a planet occurs in this system.
+int System::PlanetCount(const QString &planet) const
+{
+    int count = 0;
+    for(const StellarObject &object : objects)
+        count += (object.GetPlanet() == planet);
+    return count;
+}
+
+
+
 // Get the habitable zone's center.
 double System::HabitableZone() const
 {

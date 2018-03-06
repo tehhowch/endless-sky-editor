@@ -61,7 +61,13 @@ public:
     // Rename a system. This involves changing all the systems that link to it
     // and moving it to a new place in the map.
     void RenameSystem(const QString &from, const QString &to);
+    // Create or rename a planet. If any StellarObjects share the same planet name, all are updated.
     void RenamePlanet(StellarObject *object, const QString &name);
+    // Links a StellarObject to an existing planet, allowing creation / extension of wormholes and ringworlds.
+    void LinkToPlanet(StellarObject *object, const System *objectSystem, const QString &name);
+    // Give a StellarObject a new planet name, without updating other StellarObjects that shared
+    // the original planet (e.g. removing it from a wormhole or ringworld).
+    void RelinkObject(StellarObject *object, const System *objectSystem, const QString &newName);
 
 
 private:

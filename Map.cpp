@@ -229,17 +229,17 @@ void Map::RenameSystem(const QString &from, const QString &to)
 
 
 
-// Rename a planet. The editor does not support planets sharing a name with
-// a system, or renaming an object to share a planet definition (i.e. wormholes).
+// Rename (or initialize) the planet for the given StellarObject.
 void Map::RenamePlanet(StellarObject *object, const QString &name)
 {
-    if(!object || systems.find(name) != systems.end())
+    if(!object || name.isEmpty())
         return;
 
     auto it = planets.find(object->GetPlanet());
     if(it != planets.end())
     {
-        // Update the names used by other StellarObjects in its other systems.
+        // The same planet may be referenced from any number of StellarObjects
+        // e.g. wormholes and ringworlds. All uses need to reflect the new name.
         for(const System *system : it->second.WormholeSystems())
             for(const StellarObject &other : system->Objects())
                 if(other.GetPlanet() == object->GetPlanet() && &other != object)
@@ -255,4 +255,54 @@ void Map::RenamePlanet(StellarObject *object, const QString &name)
     }
     planets[name].SetName(name);
     object->SetPlanet(name);
+}
+
+
+
+// Replace the given object's planet with that of an existing planet (to create
+// a wormhole). The object's previous planet definition (if any) is not deleted.
+void Map::LinkToPlanet(StellarObject *object, const System *objectSystem, const QString &name)
+{
+    if(!object || !objectSystem || name.isEmpty() || !planets.count(name))
+        return;
+
+    // Update the used systems of the previous planet.
+    auto it = planets.find(object->GetPlanet());
+    if(it != planets.end() && objectSystem->PlanetCount(object->GetPlanet()) == 1)
+        it->second.RemoveSystem(objectSystem);
+
+    // Link the wormhole with the new planet.
+    object->SetPlanet(name);
+    // Update the wormhole route.
+    planets[name].AddSystem(objectSystem);
+}
+
+
+
+void Map::RelinkObject(StellarObject *object, const System *objectSystem, const QString &newName)
+{
+    // The input StellarObject must be a planet in a system.
+    if(!object || !objectSystem || !planets.count(object->GetPlanet()))
+        return;
+
+    // If "newName" corresponds to an existing planet, link with it instead.
+    if(planets.count(newName))
+    {
+        LinkToPlanet(object, objectSystem, newName);
+        return;
+    }
+
+    if(objectSystem->PlanetCount(object->GetPlanet()) == 1)
+        planets[object->GetPlanet()].RemoveSystem(objectSystem);
+
+    // If the new name is non-empty, this StellarObject will host a different planet.
+    if(!newName.isEmpty())
+    {
+        // Create a default planet with the new name.
+        Planet &planet = planets[newName];
+        planet.SetName(newName);
+        planet.AddSystem(objectSystem);
+    }
+
+    object->SetPlanet(newName);
 }
