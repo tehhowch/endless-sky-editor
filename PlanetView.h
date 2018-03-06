@@ -61,6 +61,7 @@ private:
 private:
     Map &mapData;
     StellarObject *object = nullptr;
+    const System *system = nullptr;
 
     QLineEdit *name;
     QLineEdit *government;

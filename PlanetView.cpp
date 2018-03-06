@@ -181,6 +181,7 @@ PlanetView::PlanetView(Map &mapData, QWidget *parent) :
 void PlanetView::SetPlanet(StellarObject *object, const System *system)
 {
     this->object = object;
+    this->system = system;
 
     auto it = mapData.Planets().end();
     if(object && !object->GetPlanet().isEmpty())
@@ -248,28 +249,132 @@ void PlanetView::Reinitialize()
 
 
 
+// Update the name of the current StellarObject. If previously empty, this will create a planet.
 void PlanetView::NameChanged()
 {
     if(!object || object->GetPlanet() == name->text() || name->text().isEmpty())
+    if(!object || object->GetPlanet() == name->text())
         return;
 
-    if(mapData.Planets().count(name->text()))
+    // Allow naming a planet after a system, but prompt for confirmation.
+    if(mapData.Systems().count(name->text()))
     {
-        QMessageBox::warning(this, "Duplicate name",
-            "A planet named \"" + name->text() + "\" already exists.");
+        QString message = "A system named \"" + name->text() + "\" already exists.\n";
+        message += "Planets and systems can share the same name, but use of the name in mission definitions will be ambiguous.\n";
+        message += "\nDo you really want to make a planet that shares a name with a system?";
+        name->blockSignals(true);
+        QMessageBox::StandardButton button = QMessageBox::question(this, "Duplicate name", message);
+        name->blockSignals(false);
+        if(button != QMessageBox::Yes)
+        {
+            name->setText(object->GetPlanet());
+            update();
+            return;
+        }
     }
-    else
+
+    // If this planet is referred to from more than one StellarObject, prompt to determine the desired
+    // outcome. The user may want to rename them all, or separate the selected object from the others.
+    auto oldPlanet = object->GetPlanet().isEmpty() ?
+                mapData.Planets().end() : mapData.Planets().find(object->GetPlanet());
+    bool relink = (oldPlanet != mapData.Planets().end() && (oldPlanet->second.IsWormhole()
+            || system->PlanetCount(object->GetPlanet()) > 1));
+    if(relink)
     {
-        // Copy the existing data from the old name to the new name.
-        // (This also updates `object->GetPlanet()`.)
+        QString message = QString();
+        if(oldPlanet->second.IsWormhole() && !name->text().isEmpty())
+        {
+            message += "This planet is part of a wormhole. Would you like to also update the other endpoints?\n";
+            message += "\nYes: preserve the wormhole and its links.";
+            message += "\nNo: break the link between this object and the rest of the wormhole.";
+        }
+        else
+        {
+            // This is a multi-object planet in the same system, e.g. a ringworld.
+            message += "This stellar object is part of a multi-object \"planet\". Would you like to change all objects?\n";
+            message += "\nYes: rename all objects of the planet (keeping it intact).";
+            message += "\nNo: make \"" + name->text() + "\" this object's planet instead of \"" + object->GetPlanet() + ".\"";
+        }
+        name->blockSignals(true);
+        QMessageBox::StandardButton button = QMessageBox::question(this, "Update all stellar objects?", message,
+                (QMessageBox::Cancel | QMessageBox::Yes | QMessageBox::No), QMessageBox::Cancel);
+        name->blockSignals(false);
+
+        // If the user did not choose "Yes" or "No", they closed or canceled the dialog.
+        relink = (button == QMessageBox::No);
+        if(!relink && button != QMessageBox::Yes)
+        {
+            name->setText(object->GetPlanet());
+            update();
+            return;
+        }
+    }
+
+    // If the new name is an existing planet, special handling may be required.
+    auto newPlanet = relink ? mapData.Planets().end() : mapData.Planets().find(name->text());
+
+    // Relinking the planet of an object does not overwrite any existing planet, or erase the old planet.
+    if(relink)
+        mapData.RelinkObject(object, system, name->text());
+    // When the input name matches an existing planet, prompt for confirmation
+    // to replace this object's planet with the new one.
+    else if(newPlanet != mapData.Planets().end())
+    {
+        QString title = QString();
+        QString message = "\"" + name->text() + "\" is an existing ";
+        if(newPlanet->second.IsInSystem(system))
+        {
+            // Add to / create a "ringworld" planet.
+            message +=  "planet in this system. Adding another stellar object to it will ";
+            message += "allow the player to land on either to reach the same destination.";
+            message += "\nDo you really want to create this kind of planet?";
+
+            title = "Create multi-object planet?";
+        }
+        else
+        {
+            // Add to / create a wormhole planet.
+            message += newPlanet->second.IsWormhole() ? "wormhole." : "planet in another system. ";
+            message += "Adding another instance will create a wormhole link between this system and its other system";
+            if(newPlanet->second.IsWormhole())
+            {
+                message += "s:\n";
+                for(const System *system : newPlanet->second.WormholeSystems())
+                        message += "\t" + system->Name() + "\n";
+            }
+            else
+                message += ", \"" + newPlanet->second.GetSystem()->Name() + ".\"\n";
+            message += "\nDo you really want to create this link?";
+
+            title = "Create wormhole link?";
+        }
+        name->blockSignals(true);
+        QMessageBox::StandardButton button = QMessageBox::question(this, title, message);
+        name->blockSignals(false);
+
+        if(button == QMessageBox::Yes)
+            mapData.LinkToPlanet(object, system, name->text());
+        else
+        {
+            // Abort the name change.
+            name->setText(object->GetPlanet());
+            update();
+            return;
+        }
+    }
+    // Otherwise, move the existing Planet data from the old name to the new name
+    // and update the object's referred planet.
+    else
         mapData.RenamePlanet(object, name->text());
 
-        // Update objects that have pointers to this planet.
-        Planet &planet = mapData.Planets()[name->text()];
-        landscape->SetPlanet(&planet);
+    // Update objects that have pointers to this planet.
+    Planet &planet = mapData.Planets()[name->text()];
+    landscape->SetPlanet(&planet);
 
-        mapData.SetChanged();
-    }
+    // Ensure this planet knows where it is in the galaxy.
+    planet.AddSystem(system);
+
+    mapData.SetChanged();
 }
 
 
