@@ -80,6 +80,12 @@ public:
     // Methods used to provide wormhole support.
     bool IsInSystem(const System *system) const;
     bool IsWormhole() const;
+    // Get the system name that comes before the passed system (i.e. where the player would enter
+    // in order to arrive in the passed system).
+    const System *WormholeSource(const System *destination) const;
+    // Get the system name that comes after the passed system (i.e. where the player will exit if
+    // they land on the planet in the passed system).
+    const System *WormholeDestination(const System *origin) const;
     // The ordered wormhole travel path.
     const std::vector<const System *> &WormholeSystems() const;
 

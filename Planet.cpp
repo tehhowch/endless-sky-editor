@@ -308,6 +308,16 @@ void Planet::RemoveSystem(const System *system)
 
 
 
+// Remove the first instance of a given system from a wormhole's route.
+void Planet::RemoveSystem(const System *system)
+{
+    auto it = find(systems.begin(), systems.end(), system);
+    if(it != systems.end())
+        systems.erase(it);
+}
+
+
+
 bool Planet::IsInSystem(const System *system) const
 {
     return (find(systems.begin(), systems.end(), system) != systems.end());
@@ -318,6 +328,31 @@ bool Planet::IsInSystem(const System *system) const
 bool Planet::IsWormhole() const
 {
     return (systems.size() > 1);
+}
+
+
+
+// Get the system that a ship came from if it exited into this system. If
+// multiple wormhole entrances have the same destination system, only the first
+// will be reported.
+const System *Planet::WormholeSource(const System *destination) const
+{
+    auto it = find(systems.begin(), systems.end(), destination);
+    if(it == systems.end())
+        return destination;
+    return (it == systems.begin() ? systems.back() : *--it);
+}
+
+
+
+// Get the system that a ship would exit into if it entered this wormhole.
+const System *Planet::WormholeDestination(const System *origin) const
+{
+    auto it = find(systems.begin(), systems.end(), origin);
+    if(it == systems.end())
+        return origin;
+    ++it;
+    return (it == systems.end() ? systems.front() : *it);
 }
 
 
