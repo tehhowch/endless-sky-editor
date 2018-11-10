@@ -53,13 +53,18 @@ PlanetView::PlanetView(Map &mapData, QWidget *parent) :
     landscape->setMinimumHeight(360);
     landscape->setMaximumHeight(360);
 
+    // TODO: place the description and spaceport editors into a tab widget, so they can
+    // be shown at their in-game size. Will require adjusting layout of other elements
+    // to avoid wasted horizontal space.
     description = new QPlainTextEdit(this);
     description->setTabStopWidth(20);
+//    description->setMaximumSize(505, 360);
     description->setPlaceholderText("Add a description. Descriptions are the default visible text while landed.");
     connect(description, SIGNAL(textChanged()), this, SLOT(DescriptionChanged()));
 
     spaceport = new QPlainTextEdit(this);
     spaceport->setTabStopWidth(20);
+//    spaceport->setMaximumSize(505, 360);
     spaceport->setPlaceholderText("Optional text to be shown if the player clicks the \"Spaceport\" button.");
     connect(spaceport, SIGNAL(textChanged()), this, SLOT(SpaceportDescriptionChanged()));
 
@@ -250,11 +255,25 @@ void PlanetView::Reinitialize()
 
 
 // Update the name of the current StellarObject. If previously empty, this will create a planet.
+// Changing a name to empty should not delete a planet, as the user may simply wish to change
+// where the planet (and all its associated data) is located.
 void PlanetView::NameChanged()
 {
-    if(!object || object->GetPlanet() == name->text() || name->text().isEmpty())
     if(!object || object->GetPlanet() == name->text())
         return;
+
+    // Ensure that the new planet name is valid.
+    if(name->text().isEmpty())
+    {
+        name->blockSignals(true);
+        QMessageBox::warning(this, "Unable to disassociate",
+            "To remove this planet definition from this object, use the \"System\"->\"Separate Planet and Object\" menu option.");
+        name->blockSignals(false);
+
+        name->setText(object->GetPlanet());
+        update();
+        return;
+    }
 
     // Allow naming a planet after a system, but prompt for confirmation.
     if(mapData.Systems().count(name->text()))
@@ -312,6 +331,8 @@ void PlanetView::NameChanged()
 
     // If the new name is an existing planet, special handling may be required.
     auto newPlanet = relink ? mapData.Planets().end() : mapData.Planets().find(name->text());
+    // If linking this object to an existing planet, the View's fields need to be updated based on the new planet.
+    bool updateFields = relink;
 
     // Relinking the planet of an object does not overwrite any existing planet, or erase the old planet.
     if(relink)
@@ -353,7 +374,10 @@ void PlanetView::NameChanged()
         name->blockSignals(false);
 
         if(button == QMessageBox::Yes)
+        {
             mapData.LinkToPlanet(object, system, name->text());
+            updateFields = true;
+        }
         else
         {
             // Abort the name change.
@@ -367,9 +391,13 @@ void PlanetView::NameChanged()
     else
         mapData.RenamePlanet(object, name->text());
 
-    // Update objects that have pointers to this planet.
     Planet &planet = mapData.Planets()[name->text()];
-    landscape->SetPlanet(&planet);
+
+    // Update this View's objects that need this planet / its data.
+    if(updateFields)
+        SetPlanet(object, system);
+    else
+        landscape->SetPlanet(&planet);
 
     // Ensure this planet knows where it is in the galaxy.
     planet.AddSystem(system);

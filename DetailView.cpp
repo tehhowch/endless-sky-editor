@@ -17,7 +17,6 @@ PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 #include "System.h"
 
 #include <QEvent>
-#include <QMessageBox>
 #include <QLabel>
 #include <QLineEdit>
 #include <QSpinBox>
